@@ -18,7 +18,7 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     w = 5
     ww = 2*w
     x = w
-    xMax = len(ecg.data) - w;
+    xMax = len(ecg.data) - ww;
 
     while x < xMax:
         x0 = x - ww
@@ -74,6 +74,15 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
         maxId = i + width//2
         for j in range(minId, maxId + 1):
             avg[j - minId] += ecg.data[j]/len(RIds)
+            
+    isoAvg = 0
+    nIsoAvg = 20
+    for i in range(0, nIsoAvg):
+        isoAvg += avg[i]/nIsoAvg
+
+    for i in range(len(avg)):
+        avg[i] -= isoAvg
+            
     result = [timeIndex, avg]
     return result
 
@@ -126,12 +135,18 @@ def plotData(data, iStr, title):
     plt.ylabel("Napięcie [mV]")
     plt.plot(avgX, avgY)
 
-allData = [[1, '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
-            '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_1_M_EKG_Po-L05'], # 1
-           [3, '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_3_K_EKG_Przed-L05',
-            '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_3_K_EKG_Po-L05'], # 3
-           [4, '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_4_M_EKG_Przed2-L05',
-            '/home/ailuropoda/Documents/studia/Proj/N_M_P_PROJEKT/ID_4_M_EKG_Po-L05'], # 4
+dataDir = '/home/ailuropoda/Documents/studia/Proj/eCaffeine/'
+
+allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Po-L05'], # 1
+           [3, dataDir + 'N_M_P_PROJEKT/ID_3_K_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_3_K_EKG_Po-L05'], # 3
+           [4, dataDir + 'N_M_P_PROJEKT/ID_4_M_EKG_Przed2-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_4_M_EKG_Po-L05'], # 4
+           [5, dataDir + 'N_M_P_PROJEKT/ID_5_K_EKG_Przed-L05_Edited',
+            dataDir + 'N_M_P_PROJEKT/ID_5_K_EKG_Po-L05'], # 5
+           [6, dataDir + 'N_M_P_PROJEKT/ID_6_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_6_M_EKG_Po-L05'], # 6
            ]
 
 for d in allData:
