@@ -147,6 +147,10 @@ allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
             dataDir + 'N_M_P_PROJEKT/ID_5_K_EKG_Po-L05'], # 5
            [6, dataDir + 'N_M_P_PROJEKT/ID_6_M_EKG_Przed-L05',
             dataDir + 'N_M_P_PROJEKT/ID_6_M_EKG_Po-L05'], # 6
+           [8, dataDir + 'N_M_P_PROJEKT/ID_8_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_8_M_EKG_Po-L05'], # 8
+           [9, dataDir + 'N_M_P_PROJEKT/ID_9_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_9_M_EKG_Po-L05'] # 9
            ]
 
 for d in allData:
