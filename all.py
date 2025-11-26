@@ -15,7 +15,7 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     RX = []
     RY = []
 
-    w = 5
+    w = 8
     ww = 2*w
     x = w
     xMax = len(ecg.data) - ww;
@@ -92,6 +92,7 @@ def calculateAllAVG(allData, dataId):
     width = 0
     xyArr = []
     longestX = []
+    hr = []
     for d in allData:
         data = bioread.read_file(d[dataId])
         xy = calculateAVG(data)
@@ -99,6 +100,9 @@ def calculateAllAVG(allData, dataId):
         if len(xy[0]) > len(longestX):
             longestX = xy[0]
         xyArr.append(xy)
+        
+        hr.append(xy[0][len(xy[0]) - 1])
+        
     width = 2*(int(round(width/len(allData)))//2) - 1
 
     for i in range(0, width):
@@ -123,6 +127,8 @@ def calculateAllAVG(allData, dataId):
     plt.xlabel("Czas [s]")
     plt.ylabel("Napięcie [mV]")
     plt.plot(allTimeIndex, allAvg)
+
+    return hr;
         
 
 def plotData(data, iStr, title):
@@ -158,7 +164,13 @@ allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
            [12, dataDir + 'N_M_P_PROJEKT/ID_12_K_EKG_Przed-L05',
             dataDir + 'N_M_P_PROJEKT/ID_12_K_EKG_Po-L05'], # 12
            [13, dataDir + 'N_M_P_PROJEKT/ID_13_M_EKG_Przed-L05',
-            dataDir + 'N_M_P_PROJEKT/ID_13_M_EKG_Po-L05'] # 13
+            dataDir + 'N_M_P_PROJEKT/ID_13_M_EKG_Po-L05'], # 13
+           [14, dataDir + 'N_M_P_PROJEKT/ID_14_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_14_M_EKG_Po-L05'], # 14
+           [15, dataDir + 'N_M_P_PROJEKT/ID_15_K_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_15_K_EKG_Po-L05'], # 15
+           [16, dataDir + 'N_M_P_PROJEKT/ID_16_K_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_16_K_EKG_Po-L05'] # 16
            ]
 
 for d in allData:
@@ -168,7 +180,12 @@ for d in allData:
     data = bioread.read_file(d[2])
     plotData(data, str(index), "Po")
 
-calculateAllAVG(allData, 1)
-calculateAllAVG(allData, 2)
+hr1 = calculateAllAVG(allData, 1)
+hr2 = calculateAllAVG(allData, 2)
+
+plt.figure("Odstęp R-R")
+plt.title("Odstęp R-R")
+plt.ylabel("Czas [s]")
+plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"])
 
 plt.show()
