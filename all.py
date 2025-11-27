@@ -1,5 +1,6 @@
 import bioread
 import matplotlib.pyplot as plt
+from scipy import stats
 
 def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     ecg = data.channels[0]
@@ -62,7 +63,7 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
 
     timeIndex = []
     timeIndexInc = ecg.time_index[1] - ecg.time_index[0]
-    print(timeIndexInc)
+    # print(timeIndexInc)
     avg = []
 
     for i in range(0, width):
@@ -95,7 +96,7 @@ def calculateAllAVG(allData, dataId):
     hr = []
     for d in allData:
         data = bioread.read_file(d[dataId])
-        xy = calculateAVG(data)
+        xy = calculateAVG(data, str(d[0]))
         width += len(xy[0])
         if len(xy[0]) > len(longestX):
             longestX = xy[0]
@@ -182,6 +183,44 @@ for d in allData:
 
 hr1 = calculateAllAVG(allData, 1)
 hr2 = calculateAllAVG(allData, 2)
+
+def statisticalTest(name1, name2, name3, data1, data2):
+    def checkNormalSW(name, data, alpha):
+        pv = stats.shapiro(data).pvalue
+        print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
+        normal = pv < alphaSW
+        if normal:
+            print(name + " ma rozkład normalny")
+        else:
+            print(name + " nie ma rozkładu normalnego")
+        return normal
+
+    alphaSW = 0.05
+    data1Normal = checkNormalSW("Przed podaniem kofeiny " + name1, data1, alphaSW);
+    data2Normal = checkNormalSW("Po podaniu kofeiny " + name1, data2, alphaSW);
+    dataDiff = []
+    for i in range(0, len(data1)):
+        dataDiff.append(data2[i] - data1[i])
+
+    dataDiffNormal = checkNormalSW("Różnica " + name2, dataDiff, alphaSW);
+
+    print()
+
+    alpha = 0.05
+    pv = 0
+    if (data1Normal and data2Normal) or dataDiffNormal:
+        pv = stats.ttest_rel(data1, data2).pvalue
+        print(name1 + " Student's t-test p-value: {0:.3f}".format(pv))
+    else:
+        pv = stats.wilcoxon(data1, data2).pvalue
+        print(name1 + " Wilcoxon test p-value: {0:.3f}".format(pv))
+
+    if pv < alpha:
+        print("Mediany " + name3 + " przed i po podaniu kofeiny różnią się na poziomie istotności {0:.2f}.".format(alpha))
+    else:
+        print("Mediany " + name3 + " przed i po podaniu kofeiny nie różnią się na poziomie istotności {0:.2f}.".format(alpha))
+
+statisticalTest("Odstęp R-R", "Odstępu R-R", "Odstępów R-R", hr1, hr2)
 
 plt.figure("Odstęp R-R")
 plt.title("Odstęp R-R")
