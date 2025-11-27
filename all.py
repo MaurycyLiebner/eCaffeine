@@ -2,6 +2,19 @@ import bioread
 import matplotlib.pyplot as plt
 from scipy import stats
 
+def findTWave(data):
+    x = data[0]
+    y = data[1]
+
+    x0 = int(3*len(y)/5)
+    x1 = len(y) - 1
+    maxY = max(y[x0:x1])
+    maxX = x[y.index(maxY)]
+    return [maxX, maxY]
+
+def findTWaveY(data):
+    return findTWave(data)[1]
+
 def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     ecg = data.channels[0]
 
@@ -94,6 +107,7 @@ def calculateAllAVG(allData, dataId):
     xyArr = []
     longestX = []
     hr = []
+    ts = []
     for d in allData:
         data = bioread.read_file(d[dataId])
         xy = calculateAVG(data, str(d[0]))
@@ -103,6 +117,7 @@ def calculateAllAVG(allData, dataId):
         xyArr.append(xy)
         
         hr.append(xy[0][len(xy[0]) - 1])
+        ts.append(findTWaveY(xy))
         
     width = 2*(int(round(width/len(allData)))//2) - 1
 
@@ -129,18 +144,19 @@ def calculateAllAVG(allData, dataId):
     plt.ylabel("Napięcie [mV]")
     plt.plot(allTimeIndex, allAvg)
 
-    return hr;
+    return {"hr" : hr, "ts" : ts};
         
 
 def plotData(data, iStr, title):
     avg = calculateAVG(data, iStr, title, False)
-    avgX = avg[0]
-    avgY = avg[1]
+    t = findTWave(avg)
+    
     plt.figure(iStr + " Porównanie")
     plt.title(iStr + " Porównanie")
     plt.xlabel("Czas [s]")
     plt.ylabel("Napięcie [mV]")
-    plt.plot(avgX, avgY)
+    plt.plot(avg[0], avg[1])
+    plt.plot(t[0], t[1], 'o')
 
 dataDir = '/home/ailuropoda/Documents/studia/Proj/eCaffeine/'
 
@@ -181,10 +197,16 @@ for d in allData:
     data = bioread.read_file(d[2])
     plotData(data, str(index), "Po")
 
-hr1 = calculateAllAVG(allData, 1)
-hr2 = calculateAllAVG(allData, 2)
+data1 = calculateAllAVG(allData, 1)
+hr1 = data1["hr"]
+ts1 = data1["ts"]
+data2 = calculateAllAVG(allData, 2)
+hr2 = data2["hr"]
+ts2 = data2["ts"]
 
 def statisticalTest(name1, name2, name3, data1, data2):
+    print("\n---------- Testy statystyczne " + name2)
+    
     def checkNormalSW(name, data, alpha):
         pv = stats.shapiro(data).pvalue
         print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
@@ -220,11 +242,20 @@ def statisticalTest(name1, name2, name3, data1, data2):
     else:
         print("Mediany " + name3 + " przed i po podaniu kofeiny nie różnią się na poziomie istotności {0:.2f}.".format(alpha))
 
+
 statisticalTest("Odstęp R-R", "Odstępu R-R", "Odstępów R-R", hr1, hr2)
 
 plt.figure("Odstęp R-R")
 plt.title("Odstęp R-R")
 plt.ylabel("Czas [s]")
 plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"])
+
+
+statisticalTest("Amplituda załamka T", "Amplitudy załamka T", "Amplitud załamka T", ts1, ts2)
+
+plt.figure("Amplituda załamka T")
+plt.title("Amplituda załamka T")
+plt.ylabel("Napięcie [mV]")
+plt.boxplot([ts1, ts2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"])
 
 plt.show()
