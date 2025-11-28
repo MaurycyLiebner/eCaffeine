@@ -12,8 +12,21 @@ def findTWave(data):
     maxX = x[y.index(maxY)]
     return [maxX, maxY]
 
-def findTWaveY(data):
-    return findTWave(data)[1]
+def findRWave(data):
+    x = data[0]
+    y = data[1]
+
+    maxY = max(y)
+    maxX = x[y.index(maxY)]
+    return [maxX, maxY]
+
+def findSWave(data):
+    x = data[0]
+    y = data[1]
+
+    minY = min(y)
+    minX = x[y.index(minY)]
+    return [minX, minY]
 
 def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     ecg = data.channels[0]
@@ -108,6 +121,8 @@ def calculateAllAVG(allData, dataId):
     longestX = []
     hr = []
     ts = []
+    rs = []
+    ss = []
     for d in allData:
         data = bioread.read_file(d[dataId])
         xy = calculateAVG(data, str(d[0]))
@@ -117,7 +132,9 @@ def calculateAllAVG(allData, dataId):
         xyArr.append(xy)
         
         hr.append(xy[0][len(xy[0]) - 1])
-        ts.append(findTWaveY(xy))
+        ts.append(findTWave(xy)[1])
+        rs.append(findRWave(xy)[1])
+        ss.append(findSWave(xy)[1])
         
     width = 2*(int(round(width/len(allData)))//2) - 1
 
@@ -138,25 +155,27 @@ def calculateAllAVG(allData, dataId):
                     allAvg[len(allAvg)//2 + i] += xy[1][len(xy[1]) - 1]/len(allData)                
                 else:
                     allAvg[len(allAvg)//2 + i] += xy[1][yId]/len(allData)
-    plt.figure("Porównanie Wszystkich")
-    plt.title("Porównanie Wszystkich")
+    plt.figure("Porównanie Wszystkich EKG", figsize=(8, 4))
+    plt.title("Porównanie Wszystkich EKG")
     plt.xlabel("Czas [s]")
     plt.ylabel("Napięcie [mV]")
-    plt.plot(allTimeIndex, allAvg)
-
-    return {"hr" : hr, "ts" : ts};
+    plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
+    plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    
+    return {"hr" : hr, "ts" : ts, "rs" : rs, "ss" : ss};
         
 
-def plotData(data, iStr, title):
+def plotData(data, iStr, title, style):
     avg = calculateAVG(data, iStr, title, False)
     t = findTWave(avg)
     
-    plt.figure(iStr + " Porównanie")
-    plt.title(iStr + " Porównanie")
+    plt.figure("Badany " + iStr + " Porównanie EKG", figsize=(8, 4))
+    plt.title("Badany " + iStr + " Porównanie EKG")
     plt.xlabel("Czas [s]")
     plt.ylabel("Napięcie [mV]")
-    plt.plot(avg[0], avg[1])
-    plt.plot(t[0], t[1], 'o')
+    plt.plot(avg[0], avg[1], style)
+    plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    # plt.plot(t[0], t[1], 'o')
 
 dataDir = '/home/ailuropoda/Documents/studia/Proj/eCaffeine/'
 
@@ -193,16 +212,20 @@ allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
 for d in allData:
     index = d[0]
     data = bioread.read_file(d[1])
-    plotData(data, str(index), "Przed")
+    plotData(data, str(index), "Przed", "k-")
     data = bioread.read_file(d[2])
-    plotData(data, str(index), "Po")
+    plotData(data, str(index), "Po", "k:")
 
 data1 = calculateAllAVG(allData, 1)
 hr1 = data1["hr"]
 ts1 = data1["ts"]
+rs1 = data1["rs"]
+ss1 = data1["ss"]
 data2 = calculateAllAVG(allData, 2)
 hr2 = data2["hr"]
 ts2 = data2["ts"]
+rs2 = data2["rs"]
+ss2 = data2["ss"]
 
 def statisticalTest(name1, name2, name3, data1, data2):
     print("\n---------- Testy statystyczne " + name2)
@@ -248,7 +271,8 @@ statisticalTest("Odstęp R-R", "Odstępu R-R", "Odstępów R-R", hr1, hr2)
 plt.figure("Odstęp R-R")
 plt.title("Odstęp R-R")
 plt.ylabel("Czas [s]")
-plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"])
+plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
 
 
 statisticalTest("Amplituda załamka T", "Amplitudy załamka T", "Amplitud załamka T", ts1, ts2)
@@ -256,6 +280,26 @@ statisticalTest("Amplituda załamka T", "Amplitudy załamka T", "Amplitud załam
 plt.figure("Amplituda załamka T")
 plt.title("Amplituda załamka T")
 plt.ylabel("Napięcie [mV]")
-plt.boxplot([ts1, ts2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"])
+plt.boxplot([ts1, ts2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
+
+statisticalTest("Amplituda załamka R", "Amplitudy załamka R", "Amplitud załamka R", rs1, rs2)
+
+plt.figure("Amplituda załamka R")
+plt.title("Amplituda załamka R")
+plt.ylabel("Napięcie [mV]")
+plt.boxplot([rs1, rs2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
+
+statisticalTest("Głębokość załamka S", "Głębokości załamka S", "Głębokości załamka S", ss1, ss2)
+
+plt.figure("Głębokość załamka S")
+plt.title("Głębokość załamka S")
+plt.ylabel("Napięcie [mV]")
+plt.boxplot([ss1, ss2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
 
 plt.show()
