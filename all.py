@@ -233,7 +233,7 @@ def statisticalTest(name1, name2, name3, data1, data2):
     def checkNormalSW(name, data, alpha):
         pv = stats.shapiro(data).pvalue
         print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
-        normal = pv < alphaSW
+        normal = pv > alphaSW
         if normal:
             print(name + " ma rozkład normalny")
         else:
