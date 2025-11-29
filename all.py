@@ -1,6 +1,7 @@
 import bioread
 import matplotlib.pyplot as plt
 from scipy import stats
+import math
 
 def findTWave(data):
     x = data[0]
@@ -27,6 +28,45 @@ def findSWave(data):
     minY = min(y)
     minX = x[y.index(minY)]
     return [minX, minY]
+
+def findQWave(data):
+    x = data[0]
+    y = data[1]
+
+    r = findRWave(data)
+    rx = x.index(r[0])
+    prevY = r[1]
+    for i in reversed(range(0, rx - 1)):
+        yi = y[i]
+        if prevY - yi < 0.005 and yi > -0.15 and yi < 0.15:
+            return [x[i], yi]
+        prevY = yi
+    return [0, 0]
+    
+
+def findQTInterval(data):
+    x = data[0]
+    y = data[1]
+
+    q = findQWave(data)
+    prevY = q[1]
+    for i in reversed(range(0, x.index(q[0]) - 10)):
+        yi = y[i]
+        if abs(prevY - yi) < 0.0005:
+            q = [x[i], yi]
+            break
+        prevY = yi
+    
+    t = findTWave(data)
+    prevY = t[1]
+    for i in range(x.index(t[0]) + 25, len(x)):
+        yi = y[i]
+        if abs(prevY - yi) < 0.0005 or i == len(x) - 1:
+            t = [x[i], yi]
+            break
+        prevY = yi
+
+    return [q, t]
 
 def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     ecg = data.channels[0]
@@ -120,6 +160,7 @@ def calculateAllAVG(allData, dataId):
     xyArr = []
     longestX = []
     hr = []
+    qt = []
     ts = []
     rs = []
     ss = []
@@ -132,6 +173,8 @@ def calculateAllAVG(allData, dataId):
         xyArr.append(xy)
         
         hr.append(xy[0][len(xy[0]) - 1])
+        qtData = findQTInterval(xy)
+        qt.append(qtData[1][0] - qtData[0][0])
         ts.append(findTWave(xy)[1])
         rs.append(findRWave(xy)[1])
         ss.append(findSWave(xy)[1])
@@ -162,12 +205,11 @@ def calculateAllAVG(allData, dataId):
     plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
     plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
     
-    return {"hr" : hr, "ts" : ts, "rs" : rs, "ss" : ss};
+    return {"hr" : hr, "qt" : qt, "ts" : ts, "rs" : rs, "ss" : ss};
         
 
 def plotData(data, iStr, title, style):
     avg = calculateAVG(data, iStr, title, False)
-    t = findTWave(avg)
     
     plt.figure("Badany " + iStr + " Porównanie EKG", figsize=(8, 4))
     plt.title("Badany " + iStr + " Porównanie EKG")
@@ -175,6 +217,17 @@ def plotData(data, iStr, title, style):
     plt.ylabel("Napięcie [mV]")
     plt.plot(avg[0], avg[1], style)
     plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    
+    # t = findTWave(avg)
+    # plt.plot(t[0], t[1], 'o')
+    
+    # q = findQWave(avg)
+    # plt.plot(q[0], q[1], 'o')
+
+    # qt = findQTInterval(avg)
+    # q = qt[0]
+    # t = qt[1]
+    # plt.plot(q[0], q[1], 'o')
     # plt.plot(t[0], t[1], 'o')
 
 dataDir = '/home/ailuropoda/Documents/studia/Proj/eCaffeine/'
@@ -218,14 +271,25 @@ for d in allData:
 
 data1 = calculateAllAVG(allData, 1)
 hr1 = data1["hr"]
+qt1 = data1["qt"]
 ts1 = data1["ts"]
 rs1 = data1["rs"]
 ss1 = data1["ss"]
 data2 = calculateAllAVG(allData, 2)
 hr2 = data2["hr"]
+qt2 = data2["qt"]
 ts2 = data2["ts"]
 rs2 = data2["rs"]
 ss2 = data2["ss"]
+
+def calculateCorrectedQT(hr, qt):
+    qtc = []
+    for i in range(0, len(hr)):
+        qtc.append(1000*qt[i]/math.sqrt(hr[i]))
+    return qtc
+
+qtc1 = calculateCorrectedQT(hr1, qt1)
+qtc2 = calculateCorrectedQT(hr2, qt2)
 
 def statisticalTest(name1, name2, name3, data1, data2):
     print("\n---------- Testy statystyczne " + name2)
@@ -272,6 +336,24 @@ plt.figure("Odstęp R-R")
 plt.title("Odstęp R-R")
 plt.ylabel("Czas [s]")
 plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
+
+statisticalTest("Odstęp QT", "Odstępu QT", "Odstępów QT", qt1, qt2)
+
+plt.figure("Odstęp QT")
+plt.title("Odstęp QT")
+plt.ylabel("Czas [s]")
+plt.boxplot([qt1, qt2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
+
+statisticalTest("Skorygowany Odstęp QT", "Skorygowanego Odstępu QT", "Skorygowanych Odstępów QT", qtc1, qtc2)
+
+plt.figure("Skorygowany Odstęp QT")
+plt.title("Skorygowany Odstęp QT")
+plt.ylabel("Czas [ms]")
+plt.boxplot([qtc1, qtc2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
 
 
