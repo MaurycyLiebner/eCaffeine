@@ -2,6 +2,7 @@ import bioread
 import matplotlib.pyplot as plt
 from scipy import stats
 import math
+import statistics
 
 def findTWave(data):
     x = data[0]
@@ -121,14 +122,17 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     RIds.pop(-1)
 
     width = 0
+    timeIndexInc = ecg.time_index[1] - ecg.time_index[0]
+    RRDists = []
     for i in range(0, len(RIds) - 1):
+        RRDists.append(ecg.time_index[RIds[i + 1]] - ecg.time_index[RIds[i]])
         width += RIds[i + 1] - RIds[i]
     width = 2*(int(round(width/len(RIds)))//2) - 1
     print("\n" + iStr + " " + title + ":")
     print("Width: {0}".format(width))
 
     timeIndex = []
-    timeIndexInc = ecg.time_index[1] - ecg.time_index[0]
+
     # print(timeIndexInc)
     avg = []
 
@@ -150,8 +154,7 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     for i in range(len(avg)):
         avg[i] -= isoAvg
             
-    result = [timeIndex, avg]
-    return result
+    return [timeIndex, avg, statistics.stdev(RRDists)]
 
 def calculateAllAVG(allData, dataId):
     allAvg = []
@@ -160,6 +163,7 @@ def calculateAllAVG(allData, dataId):
     xyArr = []
     longestX = []
     hr = []
+    rrStd = []
     qt = []
     ts = []
     rs = []
@@ -173,6 +177,7 @@ def calculateAllAVG(allData, dataId):
         xyArr.append(xy)
         
         hr.append(xy[0][len(xy[0]) - 1])
+        rrStd.append(xy[2])
         qtData = findQTInterval(xy)
         qt.append(qtData[1][0] - qtData[0][0])
         ts.append(findTWave(xy)[1])
@@ -205,7 +210,7 @@ def calculateAllAVG(allData, dataId):
     plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
     plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
     
-    return {"hr" : hr, "qt" : qt, "ts" : ts, "rs" : rs, "ss" : ss};
+    return {"hr" : hr, "rrStd" : rrStd, "qt" : qt, "ts" : ts, "rs" : rs, "ss" : ss};
         
 
 def plotData(data, iStr, title, style):
@@ -271,12 +276,14 @@ for d in allData:
 
 data1 = calculateAllAVG(allData, 1)
 hr1 = data1["hr"]
+rrStd1 = data1["rrStd"]
 qt1 = data1["qt"]
 ts1 = data1["ts"]
 rs1 = data1["rs"]
 ss1 = data1["ss"]
 data2 = calculateAllAVG(allData, 2)
 hr2 = data2["hr"]
+rrStd2 = data2["rrStd"]
 qt2 = data2["qt"]
 ts2 = data2["ts"]
 rs2 = data2["rs"]
@@ -336,6 +343,16 @@ plt.figure("Odstęp R-R")
 plt.title("Odstęp R-R")
 plt.ylabel("Czas [s]")
 plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+
+
+
+statisticalTest("Odchylenie Standardowe Odstępu R-R", "Odchylenia Standardowego Odstępu R-R", "Odchyleń Standardowych Odstępów R-R", rrStd1, rrStd2)
+
+plt.figure("Odchylenie Standardowe Odstępu R-R")
+plt.title("Odchylenie Standardowe Odstępu R-R")
+plt.ylabel("Czas [s]")
+plt.boxplot([rrStd1, rrStd2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
 
 
