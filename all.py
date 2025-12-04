@@ -209,6 +209,8 @@ def calculateAllAVG(allData, dataId):
     plt.ylabel("Napięcie [mV]")
     plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
     plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    if dataId == 2:
+        plt.savefig("../wykresy/1_all.svg")
     
     return {"hr" : hr, "rrStd" : rrStd, "qt" : qt, "ts" : ts, "rs" : rs, "ss" : ss};
         
@@ -273,6 +275,7 @@ for d in allData:
     plotData(data, str(index), "Przed", "k-")
     data = bioread.read_file(d[2])
     plotData(data, str(index), "Po", "k:")
+    plt.savefig("../wykresy/1_" + str(index) + ".svg")
 
 data1 = calculateAllAVG(allData, 1)
 hr1 = data1["hr"]
@@ -344,6 +347,7 @@ plt.title("Odstęp R-R")
 plt.ylabel("Czas [s]")
 plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_1_odstep_r-r.svg")
 
 
 
@@ -354,6 +358,7 @@ plt.title("Odchylenie Standardowe Odstępu R-R")
 plt.ylabel("Czas [s]")
 plt.boxplot([rrStd1, rrStd2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_2_odch_std_odstep_r-r.svg")
 
 
 statisticalTest("Odstęp QT", "Odstępu QT", "Odstępów QT", qt1, qt2)
@@ -363,6 +368,7 @@ plt.title("Odstęp QT")
 plt.ylabel("Czas [s]")
 plt.boxplot([qt1, qt2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_3_odstep_qt.svg")
 
 
 statisticalTest("Skorygowany Odstęp QT", "Skorygowanego Odstępu QT", "Skorygowanych Odstępów QT", qtc1, qtc2)
@@ -372,6 +378,7 @@ plt.title("Skorygowany Odstęp QT")
 plt.ylabel("Czas [ms]")
 plt.boxplot([qtc1, qtc2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_4_skorygowany_odstep_qt.svg")
 
 
 statisticalTest("Amplituda załamka T", "Amplitudy załamka T", "Amplitud załamka T", ts1, ts2)
@@ -381,6 +388,7 @@ plt.title("Amplituda załamka T")
 plt.ylabel("Napięcie [mV]")
 plt.boxplot([ts1, ts2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_5_amplituda_zalamka_t.svg")
 
 
 statisticalTest("Amplituda załamka R", "Amplitudy załamka R", "Amplitud załamka R", rs1, rs2)
@@ -390,6 +398,7 @@ plt.title("Amplituda załamka R")
 plt.ylabel("Napięcie [mV]")
 plt.boxplot([rs1, rs2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_6_amplituda_zalamka_r.svg")
 
 
 statisticalTest("Głębokość załamka S", "Głębokości załamka S", "Głębokości załamka S", ss1, ss2)
@@ -399,6 +408,7 @@ plt.title("Głębokość załamka S")
 plt.ylabel("Napięcie [mV]")
 plt.boxplot([ss1, ss2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
             medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_7_amplituda_zalamka_s.svg")
 
 
 plt.show()
