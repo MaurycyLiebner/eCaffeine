@@ -25,8 +25,10 @@ def findRWave(data):
 def findSWave(data):
     x = data[0]
     y = data[1]
-
-    minY = min(y)
+    
+    x0 = int(len(y)/2)
+    x1 = int(3*len(y)/5)
+    minY = min(y[x0:x1])
     minX = x[y.index(minY)]
     return [minX, minY]
 
@@ -44,20 +46,22 @@ def findQWave(data):
         prevY = yi
     return [0, 0]
     
-
-def findQTInterval(data):
+def findQBeginning(data):
     x = data[0]
     y = data[1]
-
     q = findQWave(data)
     prevY = q[1]
     for i in reversed(range(0, x.index(q[0]) - 10)):
         yi = y[i]
-        if abs(prevY - yi) < 0.0005:
+        if abs(prevY - yi) < 0.0025:
             q = [x[i], yi]
             break
         prevY = yi
+    return q
     
+def findTEnd(data):
+    x = data[0]
+    y = data[1]
     t = findTWave(data)
     prevY = t[1]
     for i in range(x.index(t[0]) + 25, len(x)):
@@ -66,8 +70,30 @@ def findQTInterval(data):
             t = [x[i], yi]
             break
         prevY = yi
+    return t
+        
+def findSEnd(data):
+    x = data[0]
+    y = data[1]
+    s = findSWave(data)
+    prevY = s[1]
+    for i in range(x.index(s[0]) + 10, len(x)):
+        yi = y[i]
+        if abs(prevY - yi) < 0.005:
+            s = [x[i], yi]
+            break
+        prevY = yi
+    return s
 
+def findQTInterval(data):
+    q = findQBeginning(data)
+    t = findTEnd(data)
     return [q, t]
+
+def findQRSInterval(data):
+    q = findQBeginning(data)
+    s = findSEnd(data)
+    return [q, s]
 
 def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     ecg = data.channels[0]
@@ -165,6 +191,7 @@ def calculateAllAVG(allData, dataId):
     hr = []
     rrStd = []
     qt = []
+    qrs = []
     ts = []
     rs = []
     ss = []
@@ -180,6 +207,8 @@ def calculateAllAVG(allData, dataId):
         rrStd.append(xy[2])
         qtData = findQTInterval(xy)
         qt.append(qtData[1][0] - qtData[0][0])
+        qrsData = findQRSInterval(xy)
+        qrs.append(qrsData[1][0] - qrsData[0][0])
         ts.append(findTWave(xy)[1])
         rs.append(findRWave(xy)[1])
         ss.append(findSWave(xy)[1])
@@ -212,7 +241,7 @@ def calculateAllAVG(allData, dataId):
     if dataId == 2:
         plt.savefig("../wykresy/1_all.svg")
     
-    return {"hr" : hr, "rrStd" : rrStd, "qt" : qt, "ts" : ts, "rs" : rs, "ss" : ss};
+    return {"hr" : hr, "rrStd" : rrStd, "qt" : qt, "qrs" : qrs, "ts" : ts, "rs" : rs, "ss" : ss};
         
 
 def plotData(data, iStr, title, style):
@@ -225,17 +254,25 @@ def plotData(data, iStr, title, style):
     plt.plot(avg[0], avg[1], style)
     plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
     
-    # t = findTWave(avg)
-    # plt.plot(t[0], t[1], 'o')
-    
-    # q = findQWave(avg)
-    # plt.plot(q[0], q[1], 'o')
+    if False:
+        t = findTWave(avg)
+        plt.plot(t[0], t[1], 'o')
+        q = findQWave(avg)
+        plt.plot(q[0], q[1], 'o')
 
-    # qt = findQTInterval(avg)
-    # q = qt[0]
-    # t = qt[1]
-    # plt.plot(q[0], q[1], 'o')
-    # plt.plot(t[0], t[1], 'o')
+    if False:
+        qt = findQTInterval(avg)
+        q = qt[0]
+        t = qt[1]
+        plt.plot(q[0], q[1], 'o')
+        plt.plot(t[0], t[1], 'o')
+
+    if True:
+        qrs = findQRSInterval(avg)
+        q = qrs[0]
+        s = qrs[1]
+        plt.plot(q[0], q[1], 'o')
+        plt.plot(s[0], s[1], 'o')
 
 dataDir = '/home/ailuropoda/Documents/studia/Proj/eCaffeine/'
 
@@ -281,6 +318,7 @@ data1 = calculateAllAVG(allData, 1)
 hr1 = data1["hr"]
 rrStd1 = data1["rrStd"]
 qt1 = data1["qt"]
+qrs1 = data1["qrs"]
 ts1 = data1["ts"]
 rs1 = data1["rs"]
 ss1 = data1["ss"]
@@ -288,6 +326,7 @@ data2 = calculateAllAVG(allData, 2)
 hr2 = data2["hr"]
 rrStd2 = data2["rrStd"]
 qt2 = data2["qt"]
+qrs2 = data2["qrs"]
 ts2 = data2["ts"]
 rs2 = data2["rs"]
 ss2 = data2["ss"]
@@ -410,5 +449,14 @@ plt.boxplot([ss1, ss2], tick_labels=["Przed podaniem kofeiny", "30 minut po poda
             medianprops=dict(color='black'))
 plt.savefig("../wykresy/2_7_amplituda_zalamka_s.svg")
 
+
+statisticalTest("Czas trwania zespołu QRS", "Czasu trwania zespołu QRS", "Czasu trwania zespołu QRS", qrs1, qrs2)
+
+plt.figure("Czas trwania zespołu QRS")
+plt.title("Czas trwania zespołu QRS")
+plt.ylabel("Czas [s]")
+plt.boxplot([qrs1, qrs2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
+            medianprops=dict(color='black'))
+plt.savefig("../wykresy/2_8_czas_trwania_zespolu_qrs.svg")
 
 plt.show()
