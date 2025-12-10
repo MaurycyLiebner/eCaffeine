@@ -25,12 +25,17 @@ def findRWave(data):
 def findSWave(data):
     x = data[0]
     y = data[1]
-    
+
     x0 = int(len(y)/2)
-    x1 = int(3*len(y)/5)
-    minY = min(y[x0:x1])
-    minX = x[y.index(minY)]
-    return [minX, minY]
+    s = [x[x0], y[x0]]
+    prevY = s[1]
+    for i in range(x0 + 5, len(x)):
+        yi = y[i]
+        if prevY - yi < 0.005:
+            s = [x[i], yi]
+            break
+        prevY = yi
+    return s
 
 def findQWave(data):
     x = data[0]
@@ -79,7 +84,7 @@ def findSEnd(data):
     prevY = s[1]
     for i in range(x.index(s[0]) + 10, len(x)):
         yi = y[i]
-        if abs(prevY - yi) < 0.005:
+        if yi - prevY < 0.005:
             s = [x[i], yi]
             break
         prevY = yi
@@ -267,7 +272,7 @@ def plotData(data, iStr, title, style):
         plt.plot(q[0], q[1], 'o')
         plt.plot(t[0], t[1], 'o')
 
-    if True:
+    if False:
         qrs = findQRSInterval(avg)
         q = qrs[0]
         s = qrs[1]
@@ -303,7 +308,11 @@ allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
            [15, dataDir + 'N_M_P_PROJEKT/ID_15_K_EKG_Przed-L05',
             dataDir + 'N_M_P_PROJEKT/ID_15_K_EKG_Po-L05'], # 15
            [16, dataDir + 'N_M_P_PROJEKT/ID_16_K_EKG_Przed-L05',
-            dataDir + 'N_M_P_PROJEKT/ID_16_K_EKG_Po-L05'] # 16
+            dataDir + 'N_M_P_PROJEKT/ID_16_K_EKG_Po-L05'], # 16
+           [17, dataDir + 'N_M_P_PROJEKT/ID_17_M_EKG_Przed-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_17_M_EKG_Po-L05'], # 17
+           [18, dataDir + 'N_M_P_PROJEKT/ID_18_M_EKG_PrzedR2-L05',
+            dataDir + 'N_M_P_PROJEKT/ID_18_M_EKG_PoR2-L05'] # 18
            ]
 
 for d in allData:
