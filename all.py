@@ -4,6 +4,8 @@ from scipy import stats
 import math
 import statistics
 
+plt.rcParams.update({'figure.max_open_warning': 0})
+
 def findTWave(data):
     x = data[0]
     y = data[1]
@@ -106,8 +108,8 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
     if displayWholeSignal:
         plt.figure(iStr + " " + title)
         plt.title(iStr + " " + title)
-        plt.xlabel("Czas [s]")
-        plt.ylabel("Napięcie [mV]")
+        plt.xlabel("Time [s]")
+        plt.ylabel("Voltage [mV]")
         plt.plot(ecg.time_index, ecg.data)
 
     RIds = []
@@ -159,8 +161,8 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
         RRDists.append(ecg.time_index[RIds[i + 1]] - ecg.time_index[RIds[i]])
         width += RIds[i + 1] - RIds[i]
     width = 2*(int(round(width/len(RIds)))//2) - 1
-    print("\n" + iStr + " " + title + ":")
-    print("Width: {0}".format(width))
+    # print("\n" + iStr + " " + title + ":")
+    # print("Width: {0}".format(width))
 
     timeIndex = []
 
@@ -187,7 +189,7 @@ def calculateAVG(data, iStr = "", title = "", displayWholeSignal = False):
             
     return [timeIndex, avg, statistics.stdev(RRDists)]
 
-def calculateAllAVG(allData, dataId):
+def calculateAllAVG(allData, dataId, title, filename):
     allAvg = []
     allTimeIndex = []
     width = 0
@@ -237,14 +239,14 @@ def calculateAllAVG(allData, dataId):
                     allAvg[len(allAvg)//2 + i] += xy[1][len(xy[1]) - 1]/len(allData)                
                 else:
                     allAvg[len(allAvg)//2 + i] += xy[1][yId]/len(allData)
-    plt.figure("Porównanie Wszystkich EKG", figsize=(8, 4))
-    plt.title("Porównanie Wszystkich EKG")
-    plt.xlabel("Czas [s]")
-    plt.ylabel("Napięcie [mV]")
+    plt.figure(title + " average ECG", figsize=(8, 4))
+    plt.title(title + " average ECG")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Voltage [mV]")
     plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
-    plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    plt.legend(['Before administering caffeine', '30 after administering caffeine'])
     if dataId == 2:
-        plt.savefig("../wykresy/1_all.svg")
+        plt.savefig("../wykresy/" + filename + ".svg")
     
     return {"hr" : hr, "rrStd" : rrStd, "qt" : qt, "qrs" : qrs, "ts" : ts, "rs" : rs, "ss" : ss};
         
@@ -252,12 +254,12 @@ def calculateAllAVG(allData, dataId):
 def plotData(data, iStr, title, style):
     avg = calculateAVG(data, iStr, title, False)
     
-    plt.figure("Badany " + iStr + " Porównanie EKG", figsize=(8, 4))
-    plt.title("Badany " + iStr + " Porównanie EKG")
-    plt.xlabel("Czas [s]")
-    plt.ylabel("Napięcie [mV]")
+    plt.figure("Subject " + iStr + " ECG comparison", figsize=(8, 4))
+    plt.title("Subject " + iStr + " ECG comparison")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Voltage [mV]")
     plt.plot(avg[0], avg[1], style)
-    plt.legend(['Przed podaniem kofeiny', '30 minut po podaniu kofeiny'])
+    plt.legend(['Before administering caffeine', '30 after administering caffeine'])
     
     if False:
         t = findTWave(avg)
@@ -319,30 +321,21 @@ allData = [[1, dataDir + 'N_M_P_PROJEKT/ID_1_M_EKG_Przed-L05',
             dataDir + 'N_M_P_PROJEKT/ID_20_K_EKG_Po-L05'] # 20
            ]
 
+def extractData(allData, indexes):
+    result = []
+    for subject in allData:
+        if subject[0] in indexes:
+            result.append(subject)
+    return result
+
 for d in allData:
     index = d[0]
     data = bioread.read_file(d[1])
-    plotData(data, str(index), "Przed", "k-")
+    plotData(data, str(index), "Before", "k-")
     data = bioread.read_file(d[2])
-    plotData(data, str(index), "Po", "k:")
+    plotData(data, str(index), "After", "k:")
     plt.savefig("../wykresy/1_" + str(index) + ".svg")
 
-data1 = calculateAllAVG(allData, 1)
-hr1 = data1["hr"]
-rrStd1 = data1["rrStd"]
-qt1 = data1["qt"]
-qrs1 = data1["qrs"]
-ts1 = data1["ts"]
-rs1 = data1["rs"]
-ss1 = data1["ss"]
-data2 = calculateAllAVG(allData, 2)
-hr2 = data2["hr"]
-rrStd2 = data2["rrStd"]
-qt2 = data2["qt"]
-qrs2 = data2["qrs"]
-ts2 = data2["ts"]
-rs2 = data2["rs"]
-ss2 = data2["ss"]
 
 def calculateCorrectedQT(hr, qt):
     qtc = []
@@ -350,126 +343,161 @@ def calculateCorrectedQT(hr, qt):
         qtc.append(1000*qt[i]/math.sqrt(hr[i]))
     return qtc
 
-qtc1 = calculateCorrectedQT(hr1, qt1)
-qtc2 = calculateCorrectedQT(hr2, qt2)
-
-def statisticalTest(name1, name2, name3, data1, data2):
-    print("\n---------- Testy statystyczne " + name2)
+def statisticalTest(name, data1, data2):
+    print("\n---------- Statistical tests " + name)
     
     def checkNormalSW(name, data, alpha):
         pv = stats.shapiro(data).pvalue
         print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
         normal = pv > alphaSW
         if normal:
-            print(name + " ma rozkład normalny")
+            print(name + " is normally distributed")
         else:
-            print(name + " nie ma rozkładu normalnego")
+            print(name + " isn't normally distributed")
         return normal
 
     alphaSW = 0.05
-    data1Normal = checkNormalSW("Przed podaniem kofeiny " + name1, data1, alphaSW);
-    data2Normal = checkNormalSW("Po podaniu kofeiny " + name1, data2, alphaSW);
+    data1Normal = checkNormalSW("Before administering caffeine " + name, data1, alphaSW);
+    data2Normal = checkNormalSW("After administering caffeine " + name, data2, alphaSW);
     dataDiff = []
     for i in range(0, len(data1)):
         dataDiff.append(data2[i] - data1[i])
 
-    dataDiffNormal = checkNormalSW("Różnica " + name2, dataDiff, alphaSW);
+    dataDiffNormal = checkNormalSW("Difference " + name, dataDiff, alphaSW);
 
     print()
 
     alpha = 0.05
     pv = 0
+    testValueName = ""
     if (data1Normal and data2Normal) or dataDiffNormal:
+        testValueName = "Averages"
         pv = stats.ttest_rel(data1, data2).pvalue
-        print(name1 + " Student's t-test p-value: {0:.3f}".format(pv))
+        print(name + " Student's t-test p-value: {0:.3f}".format(pv))
     else:
+        testValueName = "Medians"
         pv = stats.wilcoxon(data1, data2).pvalue
-        print(name1 + " Wilcoxon test p-value: {0:.3f}".format(pv))
+        print(name + " Wilcoxon test p-value: {0:.3f}".format(pv))
 
     if pv < alpha:
-        print("Mediany " + name3 + " przed i po podaniu kofeiny różnią się na poziomie istotności {0:.2f}.".format(alpha))
+        print(testValueName + " of " + name + " before and after administering caffeine have a statistically significant difference {0:.2f}.".format(alpha))
     else:
-        print("Mediany " + name3 + " przed i po podaniu kofeiny nie różnią się na poziomie istotności {0:.2f}.".format(alpha))
+        print(testValueName + " of " + name + " before and after administering caffeine don't have a statistically significant difference {0:.2f}.".format(alpha))
 
 
-statisticalTest("Odstęp R-R", "Odstępu R-R", "Odstępów R-R", hr1, hr2)
+def testSubjects(allData, title, filename):
+    print("\n######### Statistical tests " + title)
 
-plt.figure("Odstęp R-R")
-plt.title("Odstęp R-R")
-plt.ylabel("Czas [s]")
-plt.boxplot([hr1, hr2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_1_odstep_r-r.svg")
-
-
-
-statisticalTest("Odchylenie Standardowe Odstępu R-R", "Odchylenia Standardowego Odstępu R-R", "Odchyleń Standardowych Odstępów R-R", rrStd1, rrStd2)
-
-plt.figure("Odchylenie Standardowe Odstępu R-R")
-plt.title("Odchylenie Standardowe Odstępu R-R")
-plt.ylabel("Czas [s]")
-plt.boxplot([rrStd1, rrStd2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_2_odch_std_odstep_r-r.svg")
-
-
-statisticalTest("Odstęp QT", "Odstępu QT", "Odstępów QT", qt1, qt2)
-
-plt.figure("Odstęp QT")
-plt.title("Odstęp QT")
-plt.ylabel("Czas [s]")
-plt.boxplot([qt1, qt2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_3_odstep_qt.svg")
+    data1 = calculateAllAVG(allData, 1, title, filename)
+    hr1 = data1["hr"]
+    rrStd1 = data1["rrStd"]
+    qt1 = data1["qt"]
+    qrs1 = data1["qrs"]
+    ts1 = data1["ts"]
+    rs1 = data1["rs"]
+    ss1 = data1["ss"]
+    data2 = calculateAllAVG(allData, 2, title, filename)
+    hr2 = data2["hr"]
+    rrStd2 = data2["rrStd"]
+    qt2 = data2["qt"]
+    qrs2 = data2["qrs"]
+    ts2 = data2["ts"]
+    rs2 = data2["rs"]
+    ss2 = data2["ss"]
 
 
-statisticalTest("Skorygowany Odstęp QT", "Skorygowanego Odstępu QT", "Skorygowanych Odstępów QT", qtc1, qtc2)
-
-plt.figure("Skorygowany Odstęp QT")
-plt.title("Skorygowany Odstęp QT")
-plt.ylabel("Czas [ms]")
-plt.boxplot([qtc1, qtc2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_4_skorygowany_odstep_qt.svg")
+    qtc1 = calculateCorrectedQT(hr1, qt1)
+    qtc2 = calculateCorrectedQT(hr2, qt2)
 
 
-statisticalTest("Amplituda załamka T", "Amplitudy załamka T", "Amplitud załamka T", ts1, ts2)
+    statisticalTest("R-R interval " + title, hr1, hr2)
 
-plt.figure("Amplituda załamka T")
-plt.title("Amplituda załamka T")
-plt.ylabel("Napięcie [mV]")
-plt.boxplot([ts1, ts2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_5_amplituda_zalamka_t.svg")
-
-
-statisticalTest("Amplituda załamka R", "Amplitudy załamka R", "Amplitud załamka R", rs1, rs2)
-
-plt.figure("Amplituda załamka R")
-plt.title("Amplituda załamka R")
-plt.ylabel("Napięcie [mV]")
-plt.boxplot([rs1, rs2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_6_amplituda_zalamka_r.svg")
+    plt.figure("R-R interval " + title)
+    plt.title("R-R interval " + title)
+    plt.ylabel("Time [s]")
+    plt.boxplot([hr1, hr2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_1_" + filename + "_r-r_interval.svg")
 
 
-statisticalTest("Głębokość załamka S", "Głębokości załamka S", "Głębokości załamka S", ss1, ss2)
 
-plt.figure("Głębokość załamka S")
-plt.title("Głębokość załamka S")
-plt.ylabel("Napięcie [mV]")
-plt.boxplot([ss1, ss2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_7_amplituda_zalamka_s.svg")
+    statisticalTest("R-R interval standard deviation " + title, rrStd1, rrStd2)
+
+    plt.figure("R-R interval standard deviation " + title)
+    plt.title("R-R interval standard deviation " + title)
+    plt.ylabel("Time [s]")
+    plt.boxplot([rrStd1, rrStd2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_2_" + filename + "_r-r_interval_std_dev.svg")
 
 
-statisticalTest("Czas trwania zespołu QRS", "Czasu trwania zespołu QRS", "Czasu trwania zespołu QRS", qrs1, qrs2)
+    statisticalTest("QT interval " + title, qt1, qt2)
 
-plt.figure("Czas trwania zespołu QRS")
-plt.title("Czas trwania zespołu QRS")
-plt.ylabel("Czas [s]")
-plt.boxplot([qrs1, qrs2], tick_labels=["Przed podaniem kofeiny", "30 minut po podaniu kofeiny"],
-            medianprops=dict(color='black'))
-plt.savefig("../wykresy/2_8_czas_trwania_zespolu_qrs.svg")
+    plt.figure("QT interval " + title)
+    plt.title("QT interval " + title)
+    plt.ylabel("Time [s]")
+    plt.boxplot([qt1, qt2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_3_" + filename + "_qt_interval.svg")
+
+
+    statisticalTest("Corrected QT interval " + title, qtc1, qtc2)
+
+    plt.figure("Corrected QT interval " + title)
+    plt.title("Corrected QT interval " + title)
+    plt.ylabel("Time [ms]")
+    plt.boxplot([qtc1, qtc2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_4_" + filename + "_corrected_qt_interval.svg")
+
+
+    statisticalTest("T-wave amplitude " + title, ts1, ts2)
+
+    plt.figure("T-wave amplitude " + title)
+    plt.title("T-wave amplitude " + title)
+    plt.ylabel("Voltage [mV]")
+    plt.boxplot([ts1, ts2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_5_" + filename + "_wave_amplitude.svg")
+
+
+    statisticalTest("R-wave amplitude " + title, rs1, rs2)
+
+    plt.figure("R-wave amplitude " + title)
+    plt.title("R-wave amplitude " + title)
+    plt.ylabel("Voltage [mV]")
+    plt.boxplot([rs1, rs2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_6_" + filename + "_r_wave_amplitude.svg")
+
+
+    statisticalTest("S-wave amplitude " + title, ss1, ss2)
+
+    plt.figure("S-wave amplitude " + title)
+    plt.title("S-wave amplitude " + title)
+    plt.ylabel("Voltage [mV]")
+    plt.boxplot([ss1, ss2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_7_" + filename + "_s_wave_amplitude.svg")
+
+
+    statisticalTest("QRS duration " + title, qrs1, qrs2)
+
+    plt.figure("QRS duration " + title)
+    plt.title("QRS duration " + title)
+    plt.ylabel("Time [s]")
+    plt.boxplot([qrs1, qrs2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+                medianprops=dict(color='black'))
+    plt.savefig("../wykresy/2_8_" + filename + "_qrs_duration.svg")
+
+testSubjects(allData, "All subjects", "all_subjects")
+womenData = extractData(allData, [3, 5, 12, 15, 16, 19, 20])
+testSubjects(womenData, "Women", "women")
+menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
+testSubjects(menData, "Men", "men")
+lowIntakeData = extractData(allData, [1, 3, 4, 8, 10, 12, 13])
+testSubjects(lowIntakeData, "Low intake", "low_intake")
+highIntakeData = extractData(allData, [2, 5, 6, 7, 9, 11, 14, 15, 16, 17])
+testSubjects(highIntakeData, "High intake", "high_intake")
 
 plt.show()
