@@ -244,7 +244,7 @@ def calculateAllAVG(allData, dataId, title, filename):
     plt.xlabel("Time [s]")
     plt.ylabel("Voltage [mV]")
     plt.plot(allTimeIndex, allAvg, "k-" if dataId == 1 else "k:")
-    plt.legend(['Before administering caffeine', '30 after administering caffeine'])
+    plt.legend(['Before administering caffeine', '30 minutes after administering caffeine'], loc="upper right", prop={'size':8})
     if dataId == 2:
         plt.savefig("../wykresy/" + filename + ".svg")
     
@@ -259,7 +259,7 @@ def plotData(data, iStr, title, style):
     plt.xlabel("Time [s]")
     plt.ylabel("Voltage [mV]")
     plt.plot(avg[0], avg[1], style)
-    plt.legend(['Before administering caffeine', '30 after administering caffeine'])
+    plt.legend(['Before administering caffeine', '30 minutes after administering caffeine'], loc="upper right", prop={'size':8})
     
     if False:
         t = findTWave(avg)
@@ -415,7 +415,7 @@ def testSubjects(allData, title, filename):
     plt.figure("R-R interval " + title)
     plt.title("R-R interval " + title)
     plt.ylabel("Time [s]")
-    plt.boxplot([hr1, hr2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([hr1, hr2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_1_" + filename + "_r-r_interval.svg")
 
@@ -426,7 +426,7 @@ def testSubjects(allData, title, filename):
     plt.figure("R-R interval standard deviation " + title)
     plt.title("R-R interval standard deviation " + title)
     plt.ylabel("Time [s]")
-    plt.boxplot([rrStd1, rrStd2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([rrStd1, rrStd2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_2_" + filename + "_r-r_interval_std_dev.svg")
 
@@ -436,7 +436,7 @@ def testSubjects(allData, title, filename):
     plt.figure("QT interval " + title)
     plt.title("QT interval " + title)
     plt.ylabel("Time [s]")
-    plt.boxplot([qt1, qt2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([qt1, qt2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_3_" + filename + "_qt_interval.svg")
 
@@ -446,7 +446,7 @@ def testSubjects(allData, title, filename):
     plt.figure("Corrected QT interval " + title)
     plt.title("Corrected QT interval " + title)
     plt.ylabel("Time [ms]")
-    plt.boxplot([qtc1, qtc2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([qtc1, qtc2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_4_" + filename + "_corrected_qt_interval.svg")
 
@@ -456,7 +456,7 @@ def testSubjects(allData, title, filename):
     plt.figure("T-wave amplitude " + title)
     plt.title("T-wave amplitude " + title)
     plt.ylabel("Voltage [mV]")
-    plt.boxplot([ts1, ts2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([ts1, ts2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_5_" + filename + "_wave_amplitude.svg")
 
@@ -466,7 +466,7 @@ def testSubjects(allData, title, filename):
     plt.figure("R-wave amplitude " + title)
     plt.title("R-wave amplitude " + title)
     plt.ylabel("Voltage [mV]")
-    plt.boxplot([rs1, rs2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([rs1, rs2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_6_" + filename + "_r_wave_amplitude.svg")
 
@@ -476,7 +476,7 @@ def testSubjects(allData, title, filename):
     plt.figure("S-wave amplitude " + title)
     plt.title("S-wave amplitude " + title)
     plt.ylabel("Voltage [mV]")
-    plt.boxplot([ss1, ss2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([ss1, ss2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_7_" + filename + "_s_wave_amplitude.svg")
 
@@ -486,7 +486,7 @@ def testSubjects(allData, title, filename):
     plt.figure("QRS duration " + title)
     plt.title("QRS duration " + title)
     plt.ylabel("Time [s]")
-    plt.boxplot([qrs1, qrs2], tick_labels=["Before administering caffeine", "30 after administering caffeine"],
+    plt.boxplot([qrs1, qrs2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_8_" + filename + "_qrs_duration.svg")
 
@@ -496,8 +496,8 @@ testSubjects(womenData, "Women", "women")
 menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
 testSubjects(menData, "Men", "men")
 lowIntakeData = extractData(allData, [1, 3, 4, 8, 10, 12, 13])
-testSubjects(lowIntakeData, "Low intake", "low_intake")
+testSubjects(lowIntakeData, "Low habitual caffeine intake subjects", "low_intake")
 highIntakeData = extractData(allData, [2, 5, 6, 7, 9, 11, 14, 15, 16, 17])
-testSubjects(highIntakeData, "High intake", "high_intake")
+testSubjects(highIntakeData, "High habitual caffeine intake subjects", "high_intake")
 
 plt.show()
