@@ -2,6 +2,7 @@ import bioread
 import matplotlib.pyplot as plt
 from scipy import stats
 import math
+import numpy as np
 import statistics
 
 plt.rcParams.update({'figure.max_open_warning': 0})
@@ -343,27 +344,27 @@ def calculateCorrectedQT(hr, qt):
         qtc.append(1000*qt[i]/math.sqrt(hr[i]))
     return qtc
 
+def checkNormalSW(name, data):
+    pv = stats.shapiro(data).pvalue
+    print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
+    alphaSW = 0.05
+    normal = pv > alphaSW
+    if normal:
+        print(name + " is normally distributed")
+    else:
+        print(name + " isn't normally distributed")
+    return normal
+    
 def statisticalTest(name, data1, data2):
     print("\n---------- Statistical tests " + name)
-    
-    def checkNormalSW(name, data, alpha):
-        pv = stats.shapiro(data).pvalue
-        print("\n" + name + " Shapiro-Wilk p-value: {0:.3f}".format(pv))
-        normal = pv > alphaSW
-        if normal:
-            print(name + " is normally distributed")
-        else:
-            print(name + " isn't normally distributed")
-        return normal
 
-    alphaSW = 0.05
-    data1Normal = checkNormalSW("Before administering caffeine " + name, data1, alphaSW);
-    data2Normal = checkNormalSW("After administering caffeine " + name, data2, alphaSW);
+    data1Normal = checkNormalSW("Before administering caffeine " + name, data1);
+    data2Normal = checkNormalSW("After administering caffeine " + name, data2);
     dataDiff = []
     for i in range(0, len(data1)):
         dataDiff.append(data2[i] - data1[i])
 
-    dataDiffNormal = checkNormalSW("Difference " + name, dataDiff, alphaSW);
+    dataDiffNormal = checkNormalSW("Difference " + name, dataDiff);
 
     print()
 
@@ -378,6 +379,56 @@ def statisticalTest(name, data1, data2):
         testValueName = "Medians"
         pv = stats.wilcoxon(data1, data2).pvalue
         print(name + " Wilcoxon test p-value: {0:.3f}".format(pv))
+
+    if pv < alpha:
+        print(testValueName + " of " + name + " before and after administering caffeine have a statistically significant difference {0:.2f}.".format(alpha))
+    else:
+        print(testValueName + " of " + name + " before and after administering caffeine don't have a statistically significant difference {0:.2f}.".format(alpha))
+
+def fTest(data1, data2):
+    # Calculate the sample variances
+    variance1 = np.var(data1, ddof=1)
+    variance2 = np.var(data2, ddof=1)
+
+    # Calculate the F-statistic
+    f_value = variance1 / variance2
+
+    # Calculate the degrees of freedom
+    df1 = len(data1) - 1
+    df2 = len(data2) - 1
+
+    # Calculate the p-value
+    p_value = stats.f.cdf(f_value, df1, df2)
+    return p_value
+
+def indStatisticalTest(name, name1, name2, data1, data2):
+    print("\n---------- Independent samples statistical tests " + name)
+
+    data1Normal = checkNormalSW(name1 + " " + name, data1);
+    data2Normal = checkNormalSW(name2 + " " + name, data2);
+
+    print()
+
+    alpha = 0.05
+    pv = 0
+    testValueName = ""
+    if (data1Normal and data2Normal):
+        testValueName = "Averages"
+        fp = fTest(data1, data2)
+        print(name + " F-test p-value: {0:.3f}".format(fp))
+        falpha = 0.05
+        if(fp > falpha):
+            print(name1 + " and " + name2 + " have equal variances")
+            pv = stats.ttest_ind(data1, data2).pvalue
+            print(name + " Student's t-test p-value: {0:.3f}".format(pv))
+        else:
+            print(name1 + " and " + name2 + " have different variances")
+            pv = stats.ttest_ind(data1, data2).pvalue
+            print(name + " Welch's t-test p-value: {0:.3f}".format(pv), equal_var = False)
+    else:
+        testValueName = "Medians"
+        pv = stats.mannwhitneyu(data1, data2).pvalue
+        print(name + " Mann-Whitney U test p-value: {0:.3f}".format(pv))
 
     if pv < alpha:
         print(testValueName + " of " + name + " before and after administering caffeine have a statistically significant difference {0:.2f}.".format(alpha))
@@ -490,14 +541,53 @@ def testSubjects(allData, title, filename):
                 medianprops=dict(color='black'))
     plt.savefig("../wykresy/2_8_" + filename + "_qrs_duration.svg")
 
+    return [data1, data2]
+
+def compareIndSamples(data1, data2, title, name1, name2, filename):
+    print("\n######### Statistical tests " + title)
+
+    hr1 = data1["hr"]
+    rrStd1 = data1["rrStd"]
+    qt1 = data1["qt"]
+    qrs1 = data1["qrs"]
+    ts1 = data1["ts"]
+    rs1 = data1["rs"]
+    ss1 = data1["ss"]
+
+    hr2 = data2["hr"]
+    rrStd2 = data2["rrStd"]
+    qt2 = data2["qt"]
+    qrs2 = data2["qrs"]
+    ts2 = data2["ts"]
+    rs2 = data2["rs"]
+    ss2 = data2["ss"]
+
+
+    qtc1 = calculateCorrectedQT(hr1, qt1)
+    qtc2 = calculateCorrectedQT(hr2, qt2)
+
+
+    indStatisticalTest("R-R interval " + title, name1, name2, hr1, hr2)
+    indStatisticalTest("R-R interval standard deviation " + title, name1, name2, rrStd1, rrStd2)
+    indStatisticalTest("QT interval " + title, name1, name2, qt1, qt2)
+    indStatisticalTest("Corrected QT interval " + title, name1, name2, qtc1, qtc2)
+    indStatisticalTest("T-wave amplitude " + title, name1, name2, ts1, ts2)
+    indStatisticalTest("R-wave amplitude " + title, name1, name2, rs1, rs2)
+    indStatisticalTest("S-wave amplitude " + title, name1, name2, ss1, ss2)
+    indStatisticalTest("QRS duration " + title, name1, name2, qrs1, qrs2)
+
 testSubjects(allData, "All subjects", "all_subjects")
 womenData = extractData(allData, [3, 5, 12, 15, 16, 19, 20])
 testSubjects(womenData, "Women", "women")
 menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
 testSubjects(menData, "Men", "men")
 lowIntakeData = extractData(allData, [1, 3, 4, 8, 10, 12, 13])
-testSubjects(lowIntakeData, "Low habitual caffeine intake subjects", "low_intake")
+lowIntakeResults = testSubjects(lowIntakeData, "Low habitual caffeine intake subjects", "low_intake")
 highIntakeData = extractData(allData, [2, 5, 6, 7, 9, 11, 14, 15, 16, 17])
-testSubjects(highIntakeData, "High habitual caffeine intake subjects", "high_intake")
+highIntakeResults = testSubjects(highIntakeData, "High habitual caffeine intake subjects", "high_intake")
+
+compareIndSamples(lowIntakeResults[1], highIntakeResults[1], "Low/high habitual caffeine intake subjests comparison",
+                  "Low habitual caffeine intake subjects", "High habitual caffeine intake subjects",
+                  "low_high_intake_comparison")
 
 plt.show()
