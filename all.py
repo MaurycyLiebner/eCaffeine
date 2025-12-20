@@ -74,7 +74,7 @@ def findTEnd(data):
     prevY = t[1]
     for i in range(x.index(t[0]) + 25, len(x)):
         yi = y[i]
-        if abs(prevY - yi) < 0.0005 or i == len(x) - 1:
+        if prevY - yi < 0.0005 or i == len(x) - 1:
             t = [x[i], yi]
             break
         prevY = yi
@@ -215,6 +215,8 @@ def calculateAllAVG(allData, dataId, title, filename):
         rrStd.append(xy[2])
         qtData = findQTInterval(xy)
         qt.append(qtData[1][0] - qtData[0][0])
+        #if qt[len(qt) - 1] < 0.3:
+        #    print("!!! " + str(d[0]) + ": " + str(qt[len(qt) - 1]))
         qrsData = findQRSInterval(xy)
         qrs.append(qrsData[1][0] - qrsData[0][0])
         ts.append(findTWave(xy)[1])
@@ -509,7 +511,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Voltage [mV]")
     plt.boxplot([ts1, ts2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
-    plt.savefig("../wykresy/2_5_" + filename + "_wave_amplitude.svg")
+    plt.savefig("../wykresy/2_5_" + filename + "_t_wave_amplitude.svg")
 
 
     statisticalTest("R-wave amplitude " + title, rs1, rs2)
