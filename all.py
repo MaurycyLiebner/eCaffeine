@@ -67,7 +67,7 @@ def findQBeginning(data):
         prevY = yi
     return q
     
-def findTEnd(data):
+def findTEndStartingAtT(data):
     x = data[0]
     y = data[1]
     t = findTWave(data)
@@ -79,6 +79,20 @@ def findTEnd(data):
             break
         prevY = yi
     return t
+
+def findTEndStartingAtEnd(data):
+    tAmpl = findTWave(data)[1]
+    x = data[0]
+    y = data[1]
+    prevY = y[len(y) - 1]
+    tEnd = [x[len(x) - 1], y[len(y) - 1]]
+    for i in reversed(range(0, len(y) - 1)):
+        yi = y[i]
+        if yi - prevY > tAmpl*tAmpl/50:
+            tEnd = [x[i], yi]
+            break
+        prevY = yi
+    return tEnd
         
 def findSEnd(data):
     x = data[0]
@@ -95,7 +109,7 @@ def findSEnd(data):
 
 def findQTInterval(data):
     q = findQBeginning(data)
-    t = findTEnd(data)
+    t = findTEndStartingAtEnd(data)
     return [q, t]
 
 def findQRSInterval(data):
@@ -270,7 +284,7 @@ def plotData(data, iStr, title, style):
         q = findQWave(avg)
         plt.plot(q[0], q[1], 'o')
 
-    if False:
+    if True:
         qt = findQTInterval(avg)
         q = qt[0]
         t = qt[1]
@@ -580,16 +594,16 @@ def compareIndSamples(data1, data2, title, name1, name2, filename):
 
 testSubjects(allData, "All subjects", "all_subjects")
 womenData = extractData(allData, [3, 5, 12, 15, 16, 19, 20])
-testSubjects(womenData, "Women", "women")
+#testSubjects(womenData, "Women", "women")
 menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
-testSubjects(menData, "Men", "men")
+#testSubjects(menData, "Men", "men")
 lowIntakeData = extractData(allData, [1, 3, 4, 8, 10, 12, 13])
 lowIntakeResults = testSubjects(lowIntakeData, "Low habitual caffeine intake subjects", "low_intake")
 highIntakeData = extractData(allData, [2, 5, 6, 7, 9, 11, 14, 15, 16, 17])
 highIntakeResults = testSubjects(highIntakeData, "High habitual caffeine intake subjects", "high_intake")
 
-compareIndSamples(lowIntakeResults[1], highIntakeResults[1], "Low/high habitual caffeine intake subjests comparison",
-                  "Low habitual caffeine intake subjects", "High habitual caffeine intake subjects",
-                  "low_high_intake_comparison")
+#compareIndSamples(lowIntakeResults[1], highIntakeResults[1], "Low/high habitual caffeine intake subjests comparison",
+#                  "Low habitual caffeine intake subjects", "High habitual caffeine intake subjects",
+#                  "low_high_intake_comparison")
 
 plt.show()
