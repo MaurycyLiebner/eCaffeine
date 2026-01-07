@@ -284,7 +284,7 @@ def plotData(data, iStr, title, style):
         q = findQWave(avg)
         plt.plot(q[0], q[1], 'o')
 
-    if True:
+    if False:
         qt = findQTInterval(avg)
         q = qt[0]
         t = qt[1]
@@ -452,7 +452,16 @@ def indStatisticalTest(name, name1, name2, data1, data2):
         print(testValueName + " of " + name + " before and after administering caffeine don't have a statistically significant difference {0:.2f}.".format(alpha))
 
 
-def testSubjects(allData, title, filename):
+allYLims = {}
+def applyLimits(plt, title, allSubjects):
+    if allSubjects:
+        bottom, top = plt.ylim()
+        allYLims[title] = [bottom, top]
+    else:
+        bottomTop = allYLims[title]
+        plt.ylim(bottomTop[0], bottomTop[1])
+    
+def testSubjects(allData, title, filename, allSubjects = False):
     print("\n######### Statistical tests " + title)
 
     data1 = calculateAllAVG(allData, 1, title, filename)
@@ -484,8 +493,8 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Time [s]")
     plt.boxplot([hr1, hr2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "R-R interval", allSubjects)
     plt.savefig("../wykresy/2_1_" + filename + "_r-r_interval.svg")
-
 
 
     statisticalTest("R-R interval standard deviation " + title, rrStd1, rrStd2)
@@ -495,6 +504,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Time [s]")
     plt.boxplot([rrStd1, rrStd2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "R-R interval standard deviation", allSubjects)
     plt.savefig("../wykresy/2_2_" + filename + "_r-r_interval_std_dev.svg")
 
 
@@ -505,6 +515,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Time [s]")
     plt.boxplot([qt1, qt2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "QT interval", allSubjects)
     plt.savefig("../wykresy/2_3_" + filename + "_qt_interval.svg")
 
 
@@ -515,6 +526,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Time [ms]")
     plt.boxplot([qtc1, qtc2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "Corrected QT interval", allSubjects)
     plt.savefig("../wykresy/2_4_" + filename + "_corrected_qt_interval.svg")
 
 
@@ -525,6 +537,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Voltage [mV]")
     plt.boxplot([ts1, ts2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "T-wave amplitude", allSubjects)
     plt.savefig("../wykresy/2_5_" + filename + "_t_wave_amplitude.svg")
 
 
@@ -535,6 +548,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Voltage [mV]")
     plt.boxplot([rs1, rs2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "R-wave amplitude", allSubjects)
     plt.savefig("../wykresy/2_6_" + filename + "_r_wave_amplitude.svg")
 
 
@@ -545,6 +559,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Voltage [mV]")
     plt.boxplot([ss1, ss2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "S-wave amplitude", allSubjects)
     plt.savefig("../wykresy/2_7_" + filename + "_s_wave_amplitude.svg")
 
 
@@ -555,6 +570,7 @@ def testSubjects(allData, title, filename):
     plt.ylabel("Time [s]")
     plt.boxplot([qrs1, qrs2], tick_labels=["Before administering caffeine", "30 minutes after administering caffeine"],
                 medianprops=dict(color='black'))
+    applyLimits(plt, "QRS duration", allSubjects)
     plt.savefig("../wykresy/2_8_" + filename + "_qrs_duration.svg")
 
     return [data1, data2]
@@ -592,10 +608,10 @@ def compareIndSamples(data1, data2, title, name1, name2, filename):
     indStatisticalTest("S-wave amplitude " + title, name1, name2, ss1, ss2)
     indStatisticalTest("QRS duration " + title, name1, name2, qrs1, qrs2)
 
-testSubjects(allData, "All subjects", "all_subjects")
-womenData = extractData(allData, [3, 5, 12, 15, 16, 19, 20])
+testSubjects(allData, "All subjects", "all_subjects", True)
+#womenData = extractData(allData, [3, 5, 12, 15, 16, 19, 20])
 #testSubjects(womenData, "Women", "women")
-menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
+#menData = extractData(allData, [1, 4, 6, 8, 9, 10, 11, 13, 14, 17, 18])
 #testSubjects(menData, "Men", "men")
 lowIntakeData = extractData(allData, [1, 3, 4, 8, 10, 12, 13])
 lowIntakeResults = testSubjects(lowIntakeData, "Low habitual caffeine intake subjects", "low_intake")
