@@ -384,6 +384,11 @@ def statisticalTest(name, data1, data2):
 
     print()
 
+    print("Average before: " + str(statistics.mean(data1)))
+    print("Average after: " + str(statistics.mean(data2)))
+
+    print()
+
     alpha = 0.05
     pv = 0
     testValueName = ""
